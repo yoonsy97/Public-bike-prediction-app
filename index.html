@@ -189,6 +189,52 @@
         btn.innerText = "내 주변 대여소 상황 조회";
         btn.disabled = false;
     }
+
+           // 3. Render 백엔드 API와 실시간 비동기 통신을 수행하는 핵심 모듈
+    async function requestAIPrediction(lat, lon) {
+        const resultBox = document.getElementById('resultBox');
+        
+        try {
+            // FastAPI 엔드포인트로 위도(lat), 경도(lon) 파라미터를 실시간 쿼리 스트링으로 전송
+            const response = await fetch(`${BACKEND_API_URL}/api/predict?lat=${lat}&lon=${lon}`);
+            
+            if (!response.ok) {
+                // 444 에러(주변 대여소 없음) 등 백엔드가 던진 커스텀 예외 메시지 핸들링
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "서버 연산 오류 발생");
+            }
+
+            const data = await response.json();
+
+            // [우와 포인트] 백엔드 ML 엔진이 연산해 준 결과 데이터를 DOM 요소에 초고속 바인딩
+            document.getElementById('uiStationName').innerText = data.stationName;
+            document.getElementById('uiCurrentBikes').innerText = data.currentBikes;
+            document.getElementById('uiPredictedBikes').innerText = data.predictedBikes3HoursLater;
+            
+            // 날씨 정보 포맷팅 (비가 오면 우산 이모지 추가)
+            const rainStatus = data.weather.rain ? " 🌧️ (강수 있음)" : " 🌤️ (맑음/구름)";
+            document.getElementById('uiWeather').innerText = `${data.weather.temp}°C${rainStatus}`;
+            
+            // 예측 분석 스크립트 텍스트 주입
+            document.getElementById('uiAnalysisText').innerText = data.analysis;
+
+            // [핵심 UX 체인지] alertLevel(RED, GREEN, BLUE) 마커에 맞춰 카드 스타일 클래스를 동적 교체!
+            resultBox.className = `result-container ${data.alertLevel}`;
+            
+            // 데이터 세팅이 끝나면 숨겨져 있던 결과 창을 애니메이션과 함께 노출
+            resultBox.style.display = "block";
+
+        } catch (err) {
+            console.error("[통신 에러 로그]", err);
+            // Render 무료 서버가 최초 기상 중(Cold Start)일 때를 위한 친절한 사용자 가이드라인
+            alert(`⚠️ 연산 실패: ${err.message}\n\n(Render 무료 서버가 잠자고 있는 경우 첫 부팅에 약 30초~1분이 소요될 수 있습니다. 잠시 후 버튼을 다시 눌러주세요!)`);
+        } finally {
+            // 어떤 결과가 나오든 메인 대시보드 버튼은 다시 활성화 상태로 복구
+            resetButton();
+        }
+    }
+
+       
 </script>
 </body>
 </html>
