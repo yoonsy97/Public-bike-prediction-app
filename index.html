@@ -127,3 +127,69 @@
 </div>
 
 <!-- 2, 3단계 스크립트 소스코드가 이 아래에 결합됩니다 -->
+
+
+   <script>
+    // 💡 [배포 핵심 팁] Render 백엔드 서비스를 배포한 뒤 생성되는 무료 도메인 URL로 교체하세요.
+    // 로컬 환경 테스트 시에는 "http://127.0.0.1:8000" 을 사용합니다.
+    const BACKEND_API_URL = "https://onrender.com"; 
+
+    function initiateSearch() {
+        const btn = document.getElementById('predictBtn');
+        const resultBox = document.getElementById('resultBox');
+        
+        // 1. 중복 요청 방지 및 우와 소리 나오는 로딩 피드백 애니메이션 효과
+        btn.innerText = "⚡ GPS 수신 및 AI 연산 중...";
+        btn.disabled = true;
+        resultBox.style.display = "none";
+
+        // 2. 브라우저가 GPS 하드웨어를 지원하는지 방어적 체크
+        if (!navigator.geolocation) {
+            alert("❌ 이 브라우저는 GPS 위치 정보 수신을 지원하지 않습니다.");
+            resetButton();
+            return;
+        }
+
+        // 3. 네이티브 고정밀 위치 추적(High Accuracy) 시동
+        const geoOptions = {
+            enableHighAccuracy: true, // 와이파이, 기지국, GPS 통합 고정밀 좌표 요청
+            timeout: 7000,            // 7초 내에 수신 불가 시 타임아웃
+            maximumAge: 0             // 캐시된 이전 위치를 쓰지 않고 항상 실시간 측정
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            // [성공 콜백] 좌표를 정상적으로 획득했을 때 (3단계 비동기 API 통신부와 결합됨)
+            (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                // 전송할 좌표 검증용 디버깅 로그 (브라우저 콘솔에서 확인 가능)
+                console.log(`[GPS 수신 성공] 위도: ${lat}, 경도: ${lon}`);
+                
+                // 3단계의 실제 API 백엔드 호출 함수로 좌표를 던집니다.
+                requestAIPrediction(lat, lon);
+            },
+            // [실패 콜 callback] 사용자가 거부했거나 GPS 신호가 잡히지 않을 때
+            (error) => {
+                let errorMsg = "위치 정보를 가져오는 데 실패했습니다.";
+                if (error.code === error.PERMISSION_DENIED) {
+                    errorMsg = "🔒 위치 권한 승인이 거부되었습니다. 브라우저 설정에서 권한을 허용해 주세요.";
+                } else if (error.code === error.TIMEOUT) {
+                    errorMsg = "⏳ 위치 측정 시간이 초과되었습니다. 신호가 좋은 곳에서 다시 시도해 주세요.";
+                }
+                alert(errorMsg);
+                resetButton();
+            },
+            geoOptions
+        );
+    }
+
+    function resetButton() {
+        const btn = document.getElementById('predictBtn');
+        btn.innerText = "내 주변 대여소 상황 조회";
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>
+ 
