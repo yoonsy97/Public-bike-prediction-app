@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>따릉이 예측 나침반 (AI 3H Forecast)</title>
+    <style>
+        /* 글로벌 세련된 모던 다크/라이트 하이브리드 네이티브 디자인 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', Roboto, sans-serif; 
+            background: #f8fafc; 
+            color: #1e293b;
+            margin: 0; 
+            padding: 16px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 90vh; 
+        }
+        
+        /* 메인 대시보드 초경량 카드 */
+        .dashboard-card { 
+            background: white; 
+            padding: 32px 24px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06); 
+            width: 100%; 
+            max-width: 380px; 
+            text-align: center; 
+            box-sizing: border-box;
+        }
+
+        .title-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 100px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 8px 0; color: #0f172a; }
+        .subtitle { font-size: 0.85rem; color: #64748b; margin-bottom: 32px; line-height: 1.5; }
+        
+        /* 햅틱 반응 유도용 고성능 메인 버튼 */
+        .action-btn { 
+            background: #0f172a; 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            font-size: 1rem; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-weight: 700; 
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+        .action-btn:active { transform: scale(0.98); background: #1e293b; }
+        .action-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+
+        /* 우와 소리 나오는 다이내믹 AI 리포트 결과 컨테이너 박스 */
+        .result-container { 
+            margin-top: 24px; 
+            padding: 20px; 
+            border-radius: 20px; 
+            display: none; /* 초기 상태 숨김 */
+            text-align: left; 
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 상태별 알림 컬러 명세 스펙 */
+        .RED { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+        .GREEN { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .BLUE { background: #f0f9ff; color: #075985; border: 1px solid #e0f2fe; }
+
+        .station-header { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; color: inherit; }
+        .data-row { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.95rem; }
+        .data-label { opacity: 0.8; }
+        .data-value { font-weight: 700; }
+        .highlight-value { font-size: 1.3rem; font-weight: 900; }
+
+        .divider { border: 0; border-top: 1px solid currentColor; opacity: 0.15; margin: 16px 0; }
+        .ai-analysis { font-size: 0.9rem; font-weight: 600; line-height: 1.5; margin: 0; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-card">
+    <span class="title-badge">Real-time ML Engine</span>
+    <h1>따릉이 예측 나침반</h1>
+    <p class="subtitle">지도를 켜지 않아도 내 위치 주변 대여소의<br><strong>3시간 뒤 고갈 현황</strong>을 AI가 예보합니다.</p>
+    
+    <button class="action-btn" id="predictBtn" onclick="initiateSearch()">내 주변 대여소 상황 조회</button>
+
+    <!-- [2단계에서 데이터가 꽂힐 결과창 인터페이스 영역] -->
+    <div id="resultBox" class="result-container">
+        <div class="station-header" id="uiStationName">대여소 로드 중...</div>
+        
+        <div class="data-row">
+            <span class="data-label">현재 잔여 수량</span>
+            <span class="data-value"><span id="uiCurrentBikes">0</span>대</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">현재 대기 기온</span>
+            <span class="data-value" id="uiWeather">0.0°C</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="data-row" style="align-items: center;">
+            <span class="data-label">🧠 3시간 뒤 예측</span>
+            <span class="data-value highlight-value"><span id="uiPredictedBikes">0</span>대</span>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <p class="ai-analysis" id="uiAnalysisText"></p>
+    </div>
+</div>
+
+<!-- 2, 3단계 스크립트 소스코드가 이 아래에 결합됩니다 -->
